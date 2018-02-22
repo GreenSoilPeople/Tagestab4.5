@@ -135,6 +135,7 @@ Module Main
     End Function
 
     Private Sub ProccessFile(path As String)
+        Dim fileHeader As String()
         Dim stpw As New Stopwatch
         Dim line As String()
         Q = New Queue(Of String())
@@ -148,8 +149,15 @@ Module Main
 
         Using sr As New StreamReader(input)
 
-            'skip header
-            sr.ReadLine()
+            'read file header
+            fileHeader = sr.ReadLine().Split(",")
+
+            ' if file columns < header use file header
+            If fileHeader.Length <> header(0).Length Then
+                header(0) = fileHeader
+                header(1) = fileHeader
+                Exit Sub
+            End If
 
             While Not sr.EndOfStream
                 line = Split(sr.ReadLine, """,""")
