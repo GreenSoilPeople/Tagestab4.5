@@ -1,18 +1,14 @@
 ﻿Imports System.IO
-Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Xml
 
 Module Main
     Private filenamearray As New Hashtable From {{"A", "Audi"}, {"C", "Skoda"}, {"L", "Lnf"}, {"P", "Porsche"}, {"S", "Seat"}, {"V", "Volkwagen"}}
-    Private dtMain As New DataTable
-    Private dtModel As New DataTable
     Private header(1)() As String
     Private input As String
     Private output As String
     Private Const cstUSAGE As String = "Usage: tagestab.exe <input file> <output folder>"
     Private Q As Queue(Of String())
-    Private Cancel As CancellationToken
 
     Sub Main()
 
@@ -109,8 +105,6 @@ Module Main
 
         If Init() <> 0 Then Exit Sub
 
-        Cancel = New CancellationToken
-
         If My.Application.CommandLineArgs.Count = 2 Then
             If File.Exists(My.Application.CommandLineArgs(0)) AndAlso Directory.Exists(My.Application.CommandLineArgs(1)) Then
                 input = My.Application.CommandLineArgs(0)
@@ -152,18 +146,18 @@ Module Main
             'read file header
             fileHeader = sr.ReadLine().Split(",")
 
-            ' if file columns < header use file header
-            If fileHeader.Length <> header(0).Length Then
-                header(0) = fileHeader
-                header(1) = fileHeader
+            ' if file columns <> header use file header
+            If fileHeader.Count <> header(0).Count Then
+                Log("File header does not match header file")
                 Exit Sub
             End If
+
 
             While Not sr.EndOfStream
                 line = Split(sr.ReadLine, """,""")
 
                 'For i As Integer = 0 To line.Length - 1
-                For i As Integer = 0 To header(1).Length - 1
+                For i As Integer = 0 To header(1).Count - 1
 
                     line(i) = line(i).Replace(ControlChars.Quote, "").Replace(";", ".")
                     'FZGPRNR: add 0
@@ -211,7 +205,7 @@ Module Main
 
         stpw.Stop()
         Console.WriteLine($"data proccessed in {stpw.ElapsedMilliseconds} ms")
-
+        Log($"data proccessed in {stpw.ElapsedMilliseconds} ms")
 
     End Sub
 
@@ -235,17 +229,6 @@ Module Main
         Catch ex As Exception
 
         End Try
-
-
-
-
-
-        'Using sw As New StreamWriter($"{output}\test.csv", True)
-        '    While q.Count > 0
-        '        sw.WriteLine(String.Join(sep, q.Dequeue))
-        '    End While
-
-        'End Using
 
     End Function
 
@@ -281,55 +264,6 @@ Module Main
         sw.WriteLine($"[{Now}] - {s}")
         sw.Close()
     End Sub
-    ''' <summary>
-    ''' Export data to CSV
-    ''' </summary>
-    ''' <param name="brand">Export data for this brand</param>
-    Private Sub ExportCSV(brand As String)
-        Log($"Exporting {brand}")
-        Dim sep As String = ";"
-        Dim filename As String = filenamearray(brand)
-        Dim line As String
-
-        Dim sw As New StreamWriter($"{output}\{filename}.csv")
-
-        Dim selectString As String = $"FABFAB='""{brand}""'"
-        Dim selectedRows() As DataRow = dtMain.Select(selectString)
-
-        If selectedRows.Length > 0 Then
-            For Each row As DataRow In selectedRows.AsEnumerable
-                line = ""
-                line = String.Join(sep, row.ItemArray.Select(Function(c) c.ToString).ToArray)
-                sw.WriteLine(line)
-            Next
-        End If
-
-        sw.Close()
-        Log($"{brand} exported")
-    End Sub
-
-    Private Sub ExportHeader()
-
-        Dim doc As New XmlDocument
-        Dim nl As XmlNodeList
-
-        doc.Load("header.xml")
-
-        nl = doc.SelectNodes("/header/h")
-
-        For i As Integer = 0 To nl.Count - 1
-            Select Case i
-                Case 34, 35, 38, 40, 42 To 44, 57, 65, 85, 100 To 102, 104, 107 To 112, 114, 118, 124, 132 To 137, 139, 142, 149, 156, 165, 166, 168, 170, 172, 173, 182 To 184
-                    nl(i).Attributes.GetNamedItem("type").Value = "number"
-                Case 14, 19, 21 To 25, 31 To 33, 45, 55, 56, 58, 59, 61, 62, 64, 66 To 68, 86, 116, 119, 125, 126, 143 To 146, 177, 180, 186
-                    nl(i).Attributes.GetNamedItem("type").Value = "date"
-                Case Else
-                    nl(i).Attributes.GetNamedItem("type").Value = "string"
-            End Select
-        Next
-        doc.Save("header.xml")
-    End Sub
-
 
     ''' <summary>
     ''' Load header from XML
@@ -342,7 +276,6 @@ Module Main
             Log($"File not found: {path}")
             'Throw New FileNotFoundException
             Return 1
-            Exit Function
         End If
 
         Dim name As New List(Of String)
