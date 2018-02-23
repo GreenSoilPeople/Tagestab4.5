@@ -106,11 +106,18 @@ Module Main
         If Init() <> 0 Then Exit Sub
 
         If My.Application.CommandLineArgs.Count = 2 Then
-            If File.Exists(My.Application.CommandLineArgs(0)) AndAlso Directory.Exists(My.Application.CommandLineArgs(1)) Then
-                input = My.Application.CommandLineArgs(0)
-                output = My.Application.CommandLineArgs(1)
-                ProccessFile(input)
+            If Not File.Exists(My.Application.CommandLineArgs(0)) Then
+                Console.WriteLine("Unable to locate input file.")
+                Exit Sub
             End If
+            If Directory.Exists(My.Application.CommandLineArgs(1)) Then
+                Console.WriteLine("Output folder does not exist. Please create it.")
+                Exit Sub
+            End If
+
+            input = My.Application.CommandLineArgs(0)
+            output = My.Application.CommandLineArgs(1)
+            ProccessFile(input)
         Else
             Console.WriteLine("Ivalid argumets specified.")
             Console.WriteLine()
