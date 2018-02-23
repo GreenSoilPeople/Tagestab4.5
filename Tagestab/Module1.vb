@@ -103,8 +103,6 @@ Module Main
 
 #End Region
 
-        If Init() <> 0 Then Exit Sub
-
         If My.Application.CommandLineArgs.Count = 2 Then
             If Not File.Exists(My.Application.CommandLineArgs(0)) Then
                 Console.WriteLine("Unable to locate input file.")
@@ -114,7 +112,7 @@ Module Main
                 Console.WriteLine("Output folder does not exist. Please create it.")
                 Exit Sub
             End If
-
+            If Init() <> 0 Then Exit Sub
             input = My.Application.CommandLineArgs(0)
             output = My.Application.CommandLineArgs(1)
             ProccessFile(input)
@@ -123,6 +121,9 @@ Module Main
             Console.WriteLine()
             Console.WriteLine(cstUSAGE)
         End If
+
+
+
     End Sub
 
     Private Function Init() As Integer
@@ -141,11 +142,15 @@ Module Main
         Dim line As String()
         Q = New Queue(Of String())
 
-        For Each s As String In Directory.GetFiles(output, "*.csv")
+        If Directory.Exists(output) Then
 
-            File.Delete(s)
-        Next
+            For Each s As String In Directory.GetFiles(output, "*.csv")
 
+                File.Delete(s)
+            Next
+        Else
+            Directory.CreateDirectory(output)
+        End If
         stpw.Restart()
 
         Using sr As New StreamReader(input)
